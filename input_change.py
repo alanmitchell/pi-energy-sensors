@@ -19,6 +19,13 @@ class InputChange(threading.Thread):
             read_gap          number of milliseconds between reads of the input pins
             buffer_len        number of stable reads required before a transition is deemed
             debug_pin         pin number to toggle at every point a set of input pin reads occur
+        With read_gap=3 ms and buffer_len=8 and a no-bounce signal, this worked accurately at 15 Hz,
+        but limiting its use to 10 Hz would be better due to following calculation:
+        With read_gap=3 ms, actual read gap is closer
+        to 3.3 ms.  Then occasional long sleeps can be 16 ms. With one long sleep in the buffer,
+        total stable time needs to be: 3.3 ms * 7 + 16 ms = 39 ms.  One cycle has two stable
+        states, so total readable period is 39 ms * 2 = 78 ms, or a frequency of 12.8 Hz.  Thus
+        10 Hz is a good limit.
         """
 
         # run constructor of base class
@@ -97,4 +104,4 @@ if __name__=='__main__':
 
     while True:
         time.sleep(10)
-        print ct
+        print ct, pchg.isAlive()
