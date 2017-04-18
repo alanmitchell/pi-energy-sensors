@@ -50,7 +50,7 @@ class InputChange(threading.Thread):
             else:
                 GPIO.setup(pin, GPIO.IN)
 
-        if debug_pin:
+        if debug_pin:                            # this works cuz there is no zero pin.
             GPIO.setup(debug_pin, GPIO.OUT)
 
     def run(self):
@@ -93,12 +93,9 @@ if __name__=='__main__':
     ct = 0
     def chg(pin_num, new_state):
         global ct
-        if pin_num==18:
-            ct += 1
-        elif pin_num==23:
-            print 'Pin %s: %s' % (pin_num, new_state)
+        ct += 1
 
-    pchg = InputChange([18, 23], chg, pull_up=True, debug_pin=16)
+    pchg = InputChange(16, chg, pull_up=True, debug_pin=5)
 
     pchg.start()
 
