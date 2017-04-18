@@ -69,12 +69,16 @@ if __name__=='__main__':
 
     # Test routine and usage example
 
+    ct = 0
     def chg(pin_num, new_state):
-        print 'Pin %s: %s' % (pin_num, new_state)
+        global ct
+        ct += 1
+        #print 'Pin %s: %s' % (pin_num, new_state)
 
     pchg = InputChange(18, chg, pull_up=True, debug_pin=16)
 
     pchg.start()
 
     while True:
-        time.sleep(1)
+        time.sleep(10)
+        print ct
