@@ -5,59 +5,72 @@ import RPi.GPIO as GPIO
 
 class InputChange(threading.Thread):
 
-    def __init__(self, pin_num, call_back, pull_up=False, read_gap=3.0, buffer_len=8, debug_pin=None):
-        """Class to detect changes in an input pin.  The pin is debounced by looking
+    def __init__(self, pins, call_back, pull_up=False, read_gap=3.0, buffer_len=8, debug_pin=None):
+        """Class to detect changes in a set of input pins.  Each pin is debounced by looking
         for a stable set of readings of the new state to occur.  After 'buffer_len' readings
         of the new state, spaced 'read_gap' milliseconds apart, a transition is deemed to 
         have occurred.
         Constructor parameters are:
-            pin_num           pin number (BCM) to detect transitions on
+            pins              list of pin numbers (BCM) to detect transitions on
             call_back         function to call when a transition occurs.  The pin number, 
                                   and the new pin state,True or False, are passed as 
                                   parameters to the function.
-            pull_up           if True, turn on the internal Raspberry Pi pullup for the pin
-            read_gap          number of milliseconds between reads of the input pin
+            pull_up           if True, turn on the internal Raspberry Pi pullup for the pins
+            read_gap          number of milliseconds between reads of the input pins
             buffer_len        number of stable reads required before a transition is deemed
-            debug_pin         pin number to toggle at every point an input pin read occurs
+            debug_pin         pin number to toggle at every point a set of input pin reads occur
         """
 
         # run constructor of base class
         threading.Thread.__init__(self)
         self.daemon = True     # Python should exit if only this thread is left
 
-        self.pin_num = pin_num             # pin number (BCM) to detect pulses on
+        try:
+            len(pins)
+            self.pins = pins               # pin numbers (BCM) to detect pulses on
+        except:
+            self.pins = [pins]             # assume that one pin number was passed; convert to list
         self.call_back = call_back         # function to call when pulse occurs
         self.read_gap = read_gap           # milliseconds of gap between readings of input
         self.buffer_len = buffer_len       # number of readings required to declare new state
         self.debug_pin = debug_pin         # pin to toggle at each read. If None, no toggle
 
-        # Set up GPIO module and input pin
+        # Set up GPIO module and input pins
         GPIO.setmode(GPIO.BCM)
-        if pull_up:
-            GPIO.setup(pin_num, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        else:
-            GPIO.setup(pin_num, GPIO.IN)
+        for pin in self.pins:
+            if pull_up:
+                GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+            else:
+                GPIO.setup(pin, GPIO.IN)
 
         if debug_pin:
             GPIO.setup(debug_pin, GPIO.OUT)
 
     def run(self):
 
-        state = False
-        state_reads = [state] * self.buffer_len
+        # these dictionaries are keyed on pin number
+        cur_state = {}
+        state_reads = {}
+        for pin in self.pins:
+            cur_state[pin] = False
+            state_reads[pin] = [False] * self.buffer_len
         debug_state = False
 
         ix = 0
 
         while True:
-            state_reads[ix] = GPIO.input(self.pin_num)
-            ix = (ix + 1) % self.buffer_len
 
-            if sum(state_reads) == (not state) * self.buffer_len:
-                # a state change occurred; record it and call
-                # the callback function.
-                state = not state
-                self.call_back(self.pin_num, state)
+            for pin in self.pins:
+
+                state_reads[pin][ix] = GPIO.input(pin)
+
+                if sum(state_reads[pin]) == (not cur_state[pin]) * self.buffer_len:
+                    # a state change occurred; record it and call
+                    # the callback function.
+                    cur_state[pin] = not cur_state[pin]
+                    self.call_back(pin, cur_state[pin])
+
+            ix = (ix + 1) % self.buffer_len
 
             if self.debug_pin:
                 debug_state = not debug_state
@@ -73,9 +86,9 @@ if __name__=='__main__':
     def chg(pin_num, new_state):
         global ct
         ct += 1
-        #print 'Pin %s: %s' % (pin_num, new_state)
+        print 'Pin %s: %s' % (pin_num, new_state)
 
-    pchg = InputChange(18, chg, pull_up=True, debug_pin=16)
+    pchg = InputChange([18, 23], chg, pull_up=True, debug_pin=16)
 
     pchg.start()
 
