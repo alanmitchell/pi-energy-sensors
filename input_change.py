@@ -5,7 +5,7 @@ import RPi.GPIO as GPIO
 
 class InputChange(threading.Thread):
 
-    def __init__(self, pin_num, call_back, pull_up=False, read_gap=4.0, buffer_len=8):
+    def __init__(self, pin_num, call_back, pull_up=False, read_gap=4.0, buffer_len=8, debug_pin=None):
         """Class to detect changes in an input pin.  The pin is debounced by looking
         for a stable set of readings of the new state to occur.  After 'buffer_len' readings
         of the new state, spaced 'read_gap' milliseconds apart, a transition is deemed to 
@@ -18,6 +18,7 @@ class InputChange(threading.Thread):
             pull_up           if True, turn on the internal Raspberry Pi pullup for the pin
             read_gap          number of milliseconds between reads of the input pin
             buffer_len        number of stable reads required before a transition is deemed
+            debug_pin         pin number to toggle at every point an input pin read occurs
         """
 
         # run constructor of base class
@@ -28,6 +29,7 @@ class InputChange(threading.Thread):
         self.call_back = call_back         # function to call when pulse occurs
         self.read_gap = read_gap           # milliseconds of gap between readings of input
         self.buffer_len = buffer_len       # number of readings required to declare new state
+        self.debug_pin = debug_pin         # pin to toggle at each read. If None, no toggle
 
         # Set up GPIO module and input pin
         GPIO.setmode(GPIO.BCM)
@@ -36,10 +38,15 @@ class InputChange(threading.Thread):
         else:
             GPIO.setup(pin_num, GPIO.IN)
 
+        if debug_pin:
+            GPIO.setup(debug_pin, GPIO.OUT)
+
     def run(self):
 
         state = False
         state_reads = [state] * self.buffer_len
+        debug_state = False
+
         ix = 0
 
         while True:
@@ -52,6 +59,10 @@ class InputChange(threading.Thread):
                 state = not state
                 self.call_back(self.pin_num, state)
 
+            if self.debug_pin:
+                debug_state = not debug_state
+                GPIO.output(self.debug_pin, debug_state)
+
             time.sleep(self.read_gap / 1000.0)
 
 if __name__=='__main__':
@@ -61,9 +72,9 @@ if __name__=='__main__':
     def chg(pin_num, new_state):
         print 'Change on Pin %s: %s' % (pin_num, new_state)
 
-    pchg = InputChange(18, chg, pull_up=True)
+    pchg = InputChange(18, chg, pull_up=True, debug_pin=16)
 
     pchg.start()
 
     while True:
-	time.sleep(1)
+        time.sleep(1)
