@@ -3,6 +3,7 @@
 posts to the mini-monitor MQTT broker.
 """
 import time
+import sys
 import input_change
 import mqtt_poster
 
