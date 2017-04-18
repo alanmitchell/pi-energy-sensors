@@ -52,8 +52,9 @@ class InputChange(threading.Thread):
         cur_state = {}
         state_reads = {}
         for pin in self.pins:
-            cur_state[pin] = False
-            state_reads[pin] = [False] * self.buffer_len
+            # initialize both current and buffer to current pin state
+            cur_state[pin] = GPIO.input(pin)
+            state_reads[pin] = [cur_state[pin]] * self.buffer_len
         debug_state = False
 
         ix = 0
@@ -85,8 +86,10 @@ if __name__=='__main__':
     ct = 0
     def chg(pin_num, new_state):
         global ct
-        ct += 1
-        print 'Pin %s: %s' % (pin_num, new_state)
+        if pin_num==18:
+            ct += 1
+        elif pin_num==23:
+            print 'Pin %s: %s' % (pin_num, new_state)
 
     pchg = InputChange([18, 23], chg, pull_up=True, debug_pin=16)
 
