@@ -1,8 +1,9 @@
+#!/usr/bin/python
 import threading
 import time
 import RPi.GPIO as GPIO
 
-class InputChange(threading.Thread)
+class InputChange(threading.Thread):
 
     def __init__(self, pin_num, call_back, pull_up=False, read_gap=4.0, buffer_len=8):
         """Class to detect changes in an input pin.  The pin is debounced by looking
@@ -63,3 +64,6 @@ if __name__=='__main__':
     pchg = InputChange(18, chg, pull_up=True)
 
     pchg.start()
+
+    while True:
+	time.sleep(1)
