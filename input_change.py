@@ -5,7 +5,7 @@ import RPi.GPIO as GPIO
 
 class InputChange(threading.Thread):
 
-    def __init__(self, pin_num, call_back, pull_up=False, read_gap=4.0, buffer_len=8, debug_pin=None):
+    def __init__(self, pin_num, call_back, pull_up=False, read_gap=3.0, buffer_len=8, debug_pin=None):
         """Class to detect changes in an input pin.  The pin is debounced by looking
         for a stable set of readings of the new state to occur.  After 'buffer_len' readings
         of the new state, spaced 'read_gap' milliseconds apart, a transition is deemed to 
@@ -67,10 +67,10 @@ class InputChange(threading.Thread):
 
 if __name__=='__main__':
 
-    # Test routine
+    # Test routine and usage example
 
     def chg(pin_num, new_state):
-        print 'Change on Pin %s: %s' % (pin_num, new_state)
+        print 'Pin %s: %s' % (pin_num, new_state)
 
     pchg = InputChange(18, chg, pull_up=True, debug_pin=16)
 
