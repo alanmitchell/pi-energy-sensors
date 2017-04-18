@@ -44,6 +44,10 @@ sensor_id = '%s_%2d_pulse' % (settings.LOGGER_ID, PIN_IN)
 # get logging interval in seconds
 log_interval = settings.LOG_INTERVAL
 
+# start up the object that posts to the MQTT broker
+poster = mqtt_poster.MQTTposter()
+poster.start()
+
 pulse_count = 0
 
 def chg_detected(pin_num, new_state):
@@ -64,6 +68,18 @@ def chg_detected(pin_num, new_state):
 chg_detect = input_change.InputChange(PIN_IN, chg_detected, pull_up=False, debug_pin=debug_pin)
 chg_detect.start()
 
+# determine time to log count
+next_log_ts = time.time() + log_interval
+
 while True:
-    time.sleep(10)
-    print pulse_count, chg_detect.isAlive()
+
+    if not chg_detect.isAlive():
+        # change detector is not running.  Exit with an error
+        sys.exit(1)
+
+    ts = time.time()
+    if ts > next_log_ts:
+        poster.publish('readings/final/pulse_counter_1ch', '%s\t%s\t%s' % (int(ts), sensor_id, pulse_count))
+        next_log_ts += log_interval
+
+    time.sleep(0.5)
