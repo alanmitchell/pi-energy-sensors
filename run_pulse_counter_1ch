@@ -1,0 +1,6 @@
+#!/bin/bash
+# This scripts starts and restarts, if necessary, the pulse_counter_1ch.py program.
+until /home/pi/pi-energy-sensors/pulse_counter_1ch.py; do
+    echo "Script 'pulse_counter_1ch.py' crashed with exit code $?.  Respawning.." >&2
+    sleep 2
+done
