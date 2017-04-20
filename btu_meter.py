@@ -50,7 +50,7 @@ PATH_CALIBRATE = '/var/local/btu_calibration'
 
 # process command line arguments
 parser = argparse.ArgumentParser(description='BTU Meter Script.')
-parser.add_argument("-d", "--debug", help="turn on Debug pin", action="store_true")
+parser.add_argument("-d", "--debug", help="Set Debug mode", action="store_true")
 args = parser.parse_args()
 
 # set the debug pin if requested
@@ -204,7 +204,8 @@ while True:
         for id, val in (('heat', heat_count), ('pulse', pulse_count), ('thot', thot), ('tcold', tcold)):
             post_str += '%s\t%s_%s\t%s\n' % (ts, base_sensor_id, id, val)
         poster.publish('readings/final/btu_meter', post_str)
-        print pulse_count, heat_count, current_temps()
+        if args.debug:
+            print pulse_count, heat_count, current_temps()
         next_log_ts += log_interval
 
     time.sleep(0.05)

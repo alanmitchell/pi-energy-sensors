@@ -80,6 +80,8 @@ while True:
     ts = time.time()
     if ts > next_log_ts:
         poster.publish('readings/final/pulse_counter_1ch', '%s\t%s\t%s' % (int(ts), sensor_id, pulse_count))
+        if args.debug:
+            print pulse_count
         next_log_ts += log_interval
 
-    time.sleep(0.5)
+    time.sleep(0.2)
