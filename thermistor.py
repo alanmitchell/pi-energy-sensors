@@ -1,4 +1,4 @@
-#!/usr/bin/python2.6
+#!/usr/bin/python
 """
 Class to convert Thermistor readings into temperatures. Also has a
 class method that determines an unknown resistance in a divider
