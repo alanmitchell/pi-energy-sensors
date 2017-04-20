@@ -44,6 +44,7 @@ class InputChange(threading.Thread):
 
         # Set up GPIO module and input pins
         GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
         for pin in self.pins:
             if pull_up:
                 GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
