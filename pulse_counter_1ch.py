@@ -21,15 +21,10 @@ ROLLOVER = 1000000
 # process command line arguments
 parser = argparse.ArgumentParser(description='Single Channel Pulse Counter Script.')
 parser.add_argument("-d", "--debug", help="turn on Debug pin", action="store_true")
-parser.add_argument("-b", "--both", help="count both low-to-high and high-to-low transitions", 
-        action="store_true")
 args = parser.parse_args()
 
 # set the debug pin if requested
 debug_pin = PIN_DEBUG if args.debug else None
-
-# flag to determine if both transitions are counted
-count_both = args.both
 
 # Access some settings in the Mini-Monitor settings file
 # The settings file is installed in the FAT boot partition of the Pi SD card,
@@ -42,7 +37,10 @@ import settings
 sensor_id = '%s_%2d_pulse' % (settings.LOGGER_ID, PIN_IN)
 
 # get logging interval in seconds
-log_interval = settings.LOG_INTERVAL
+log_interval = getattr(settings, 'PULSE_LOG_INTERVAL', 10 * 60)
+
+# flag to determine if both transitions are counted
+count_both = getattr(settings, 'PULSE_BOTH_EDGES', False)
 
 # start up the object that posts to the MQTT broker
 poster = mqtt_poster.MQTTposter()
