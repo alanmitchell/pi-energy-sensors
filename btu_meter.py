@@ -39,7 +39,7 @@ HEAT_ROLLOVER = 1000000.0
 
 # Number of A/D readings to average together to get the 
 # current temperature reading.
-BUF_LEN_TEMP = 50
+BUF_LEN_TEMP = 100
 
 # process command line arguments
 parser = argparse.ArgumentParser(description='BTU Meter Script.')
