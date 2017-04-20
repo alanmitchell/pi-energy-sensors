@@ -51,15 +51,10 @@ PATH_CALIBRATE = '/var/local/btu_calibration'
 # process command line arguments
 parser = argparse.ArgumentParser(description='BTU Meter Script.')
 parser.add_argument("-d", "--debug", help="turn on Debug pin", action="store_true")
-parser.add_argument("-b", "--both", help="count both low-to-high and high-to-low transitions", 
-        action="store_true")
 args = parser.parse_args()
 
 # set the debug pin if requested
 debug_pin = PIN_DEBUG if args.debug else None
-
-# flag to determine if both transitions are counted
-count_both = args.both
 
 # Access some settings in the Mini-Monitor settings file
 # The settings file is installed in the FAT boot partition of the Pi SD card,
@@ -72,7 +67,13 @@ import settings
 sensor_id = '%s_%2d_btu' % (settings.LOGGER_ID, PIN_PULSE_IN)
 
 # get logging interval in seconds
-log_interval = settings.LOG_INTERVAL
+log_interval = getattr(settings, 'BTU_LOG_INTERVAL', 10 * 60)
+
+# get the minimum delta-T required to tally energy flow (deg F)
+min_delta_T = getattr(settings, 'BTU_MIN_DELTA_T', 0.2)
+
+# flag to determine if both transitions are counted
+count_both = getattr(settings, 'BTU_BOTH_EDGES', False)
 
 # start up the object that posts to the MQTT broker
 poster = mqtt_poster.MQTTposter()
@@ -133,13 +134,22 @@ def chg_detected(pin_num, new_state):
     global calibrate_hot, calibrate_cold
 
     if pin_num == PIN_PULSE_IN:
+        # get current temperatures
+        thot, tcold = current_temps()
+        delta_T = thot - tcold
+        # enforce minimum delta-T
+        if abs(delta_T) < min_delta_T:
+            delta_T = 0.0
         if new_state:
             # always count low-to-high transition
             pulse_count += 1
+            heat_count += delta_T
         elif count_both:
             # only count high-to-low if requested
             pulse_count += 1
+            heat_count += delta_T
         pulse_count = pulse_count % PULSE_ROLLOVER
+        heat_count = heat_count % HEAT_ROLLOVER
 
     elif pin_num == PIN_CALIBRATE:
         if new_state == False:
@@ -189,7 +199,7 @@ while True:
     ts = time.time()
     if ts > next_log_ts:
         #poster.publish('readings/final/btu_meter', '%s\t%s\t%s' % (int(ts), sensor_id, pulse_count))
-        print pulse_count, current_temps()
+        print pulse_count, heat_count, current_temps()
         next_log_ts += log_interval
 
     time.sleep(0.05)
