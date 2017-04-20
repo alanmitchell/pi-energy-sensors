@@ -9,9 +9,14 @@ the script if an error occurs.
 import time
 import sys
 import argparse
+import RPi.GPIO as GPIO
 import input_change
 import mqtt_poster
-import RPi.GPIO as GPIO
+import thermistor
+
+# Import SPI library (for hardware SPI) and MCP3008 library.
+import Adafruit_GPIO.SPI as SPI
+import Adafruit_MCP3008
 
 # GPIO Pins (BCM numbering) and ADC channels used by the BTU METER
 PIN_PULSE_IN = 13
@@ -31,6 +36,10 @@ PULSE_ROLLOVER = 1000000
 # Value at which the heat count rolls over.  This is a sum of the delta-Ts
 # that are present when pulses occur.
 HEAT_ROLLOVER = 1000000.0
+
+# Number of A/D readings to average together to get the 
+# current temperature reading.
+BUF_LEN_TEMP = 50
 
 # process command line arguments
 parser = argparse.ArgumentParser(description='BTU Meter Script.')
@@ -62,12 +71,44 @@ log_interval = settings.LOG_INTERVAL
 poster = mqtt_poster.MQTTposter()
 poster.start()
 
+# make a thermistor object to convert A/D readings into temperature.
+# Using a 4.99 K divider resistor and a 10-bit A/D converter with max
+# value of 1023.
+therm = thermistor.Thermistor('BAPI 10K-3', appliedV=1023.0, dividerR=4990.0)
+
+# Initialize pulse count and heat count
 pulse_count = 0
+heat_count = 0.0
+
+# Set up MCP3008 A/D converter.  We are using the hardware SPI port
+# on the Raspberry Pi (to save CPU cycles).
+SPI_PORT   = 0
+SPI_DEVICE = 0
+mcp = Adafruit_MCP3008.MCP3008(spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE))
+
+# Initialize arrays to hold hot and cold thermistor A/D readings.
+# These arrays are used to calculate a current reading that is
+# an average of recent readings.  The raw A/D counts are stored
+# in the array to elimnate the CPU time needed to convert each into
+# a temperature.  Variation between the readings is small, so the
+# non-linearity of the count-->temperature function is not important.
+ad_hot = [mcp.read_adc(ADC_CH_THOT)] * BUF_LEN_TEMP
+ad_cold = [mcp.read_adc(ADC_CH_TCOLD)] * BUF_LEN_TEMP
+
+def current_temps():
+    """Returns the current hot and cold temperatures, averaging the values
+    in the reading buffer.
+    """
+    thot = sum(ad_hot)/float(BUF_LEN_TEMP)
+    thot = therm.TfromV(thot)
+    tcold = sum(ad_cold)/float(BUF_LEN_TEMP)
+    tcold = therm.TfromV(tcold)
+    return thot, tcold
 
 def chg_detected(pin_num, new_state):
     """This is called when the input pin changes state.
     """
-    global pulse_count
+    global pulse_count, heat_count
 
     if pin_num == PIN_PULSE_IN:
         if new_state:
@@ -95,15 +136,25 @@ chg_detect.start()
 # determine time to log count
 next_log_ts = time.time() + log_interval
 
+# index into temperature reading buffer arrays
+ix = 0
+
 while True:
 
     if not chg_detect.isAlive():
         # change detector is not running.  Exit with an error
         sys.exit(1)
+    
+    # Read temperatures and update buffer index
+    ad_hot[ix] = mcp.read_adc(ADC_CH_THOT)
+    ad_cold[ix] = mcp.read_adc(ADC_CH_TCOLD)
+    ix = (ix + 1) % BUF_LEN_TEMP
 
+    # Check to see if it is time to log
     ts = time.time()
     if ts > next_log_ts:
-        poster.publish('readings/final/btu_meter', '%s\t%s\t%s' % (int(ts), sensor_id, pulse_count))
+        #poster.publish('readings/final/btu_meter', '%s\t%s\t%s' % (int(ts), sensor_id, pulse_count))
+        print pulse_count, current_temps()
         next_log_ts += log_interval
 
-    time.sleep(0.5)
+    time.sleep(0.05)
