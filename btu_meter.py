@@ -5,6 +5,9 @@ to the mini-monitor MQTT broker.
 
 This script should be started by a supervisor capable of restarting
 the script if an error occurs.
+
+This script must be run with sudo because it writes to the /var/local 
+directory.
 """
 import time
 import sys
