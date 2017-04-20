@@ -8,6 +8,7 @@ the script if an error occurs.
 """
 import time
 import sys
+import os
 import argparse
 import RPi.GPIO as GPIO
 import input_change
@@ -43,6 +44,9 @@ HEAT_ROLLOVER = 1000000.0
 # Number of A/D readings to average together to get the 
 # current temperature reading.
 BUF_LEN_TEMP = 100
+
+# Path to temperature calibration file
+PATH_CALIBRATE = '/var/local/btu_calibration'
 
 # process command line arguments
 parser = argparse.ArgumentParser(description='BTU Meter Script.')
@@ -98,14 +102,23 @@ mcp = Adafruit_MCP3008.MCP3008(spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE))
 ad_hot = [mcp.read_adc(ADC_CH_THOT)] * BUF_LEN_TEMP
 ad_cold = [mcp.read_adc(ADC_CH_TCOLD)] * BUF_LEN_TEMP
 
+# read in the temperature calibration coefficients if the file exists
+if os.path.exists(PATH_CALIBRATE):
+    with open(PATH_CALIBRATE, 'r') as fin:
+        calibrate_hot = float(fin.readline())
+        calibrate_cold = float(fin.readline())
+else:
+    calibrate_hot = 0.0
+    calibrate_cold = 0.0
+
 def current_temps():
     """Returns the current hot and cold temperatures, averaging the values
     in the reading buffer.
     """
     thot = sum(ad_hot)/float(BUF_LEN_TEMP)
-    thot = therm.TfromV(thot)
+    thot = therm.TfromV(thot) + calibrate_hot
     tcold = sum(ad_cold)/float(BUF_LEN_TEMP)
-    tcold = therm.TfromV(tcold)
+    tcold = therm.TfromV(tcold) + calibrate_cold
     return thot, tcold
 
 def chg_detected(pin_num, new_state):
@@ -124,12 +137,25 @@ def chg_detected(pin_num, new_state):
 
     elif pin_num == PIN_CALIBRATE:
         if new_state == False:
+            # Calibrate button was pressed
+            # Check a second later to see if it is still pressed.
+            # Note that this interrupts pulse counting.
             time.sleep(1.0)
             if GPIO.input(PIN_CALIBRATE)==False:
+                # blink LED to indicate that calibrate function will occur
                 GPIO.output(PIN_LED, True)
                 time.sleep(1.0)
                 GPIO.output(PIN_LED, False)
-                # perform calibration here
+
+                # calibrate process
+                thot, tcold = current_temps()
+                true_temp = (thot + tcold)/2.0  # deemed the true temp
+                calibrate_hot = true_temp - thot
+                calibrate_cold = true_temp - tcold
+                # store new calibration values
+                with open(PATH_CALIBRATE, 'w') as fout:
+                    fout.write('%s\n' % calibrate_hot)
+                    fout.write('%s\n' % calibrate_cold)
 
 # Start up the Input Pin Change Detector
 # I have a 10 K pull-up on the board and a 0.01 uF cap to ground.
