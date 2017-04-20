@@ -73,8 +73,8 @@ next_log_ts = time.time() + log_interval
 
 while True:
 
-    if not chg_detect.isAlive():
-        # change detector is not running.  Exit with an error
+    if not chg_detect.isAlive() or not poster.isAlive():
+        # an important thread is not running.  Exit with an error.
         sys.exit(1)
 
     ts = time.time()

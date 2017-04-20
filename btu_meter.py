@@ -63,8 +63,8 @@ debug_pin = PIN_DEBUG if args.debug else None
 sys.path.insert(0, '/boot/pi_logger')
 import settings
 
-# make a sensor id
-sensor_id = '%s_%2d_btu' % (settings.LOGGER_ID, PIN_PULSE_IN)
+# make a base sensor id
+base_sensor_id = '%s_%2d_btu' % (settings.LOGGER_ID, PIN_PULSE_IN)
 
 # get logging interval in seconds
 log_interval = getattr(settings, 'BTU_LOG_INTERVAL', 10 * 60)
@@ -186,8 +186,8 @@ ix = 0
 
 while True:
 
-    if not chg_detect.isAlive():
-        # change detector is not running.  Exit with an error
+    if not chg_detect.isAlive() or not poster.isAlive():
+        # important thread is not running.  Exit with an error.
         sys.exit(1)
     
     # Read temperatures and update buffer index
@@ -198,7 +198,12 @@ while True:
     # Check to see if it is time to log
     ts = time.time()
     if ts > next_log_ts:
-        #poster.publish('readings/final/btu_meter', '%s\t%s\t%s' % (int(ts), sensor_id, pulse_count))
+        post_str = ''
+        ts = int(ts)
+        thot, tcold = current_temps()
+        for id, val in (('heat', heat_count), ('pulse', pulse_count), ('thot', thot), ('tcold', tcold)):
+            post_str += '%s\t%s_%s\t%s\n' % (ts, base_sensor_id, id, val)
+        poster.publish('readings/final/btu_meter', post_str)
         print pulse_count, heat_count, current_temps()
         next_log_ts += log_interval
 
