@@ -111,20 +111,26 @@ else:
     calibrate_hot = 0.0
     calibrate_cold = 0.0
 
-def current_temps():
+def current_temps(include_calibration=True):
     """Returns the current hot and cold temperatures, averaging the values
-    in the reading buffer.
+    in the reading buffer.  If 'include_calibration' is True, apply the
+    calibration values.
     """
     thot = sum(ad_hot)/float(BUF_LEN_TEMP)
-    thot = therm.TfromV(thot) + calibrate_hot
+    thot = therm.TfromV(thot)
+    if include_calibration:
+        thot += calibrate_hot
     tcold = sum(ad_cold)/float(BUF_LEN_TEMP)
-    tcold = therm.TfromV(tcold) + calibrate_cold
+    tcold = therm.TfromV(tcold)
+    if include_calibration:
+        tcold += calibrate_cold
     return thot, tcold
 
 def chg_detected(pin_num, new_state):
     """This is called when the input pin changes state.
     """
     global pulse_count, heat_count
+    global calibrate_hot, calibrate_cold
 
     if pin_num == PIN_PULSE_IN:
         if new_state:
@@ -148,7 +154,7 @@ def chg_detected(pin_num, new_state):
                 GPIO.output(PIN_LED, False)
 
                 # calibrate process
-                thot, tcold = current_temps()
+                thot, tcold = current_temps(include_calibration=False)
                 true_temp = (thot + tcold)/2.0  # deemed the true temp
                 calibrate_hot = true_temp - thot
                 calibrate_cold = true_temp - tcold
