@@ -26,6 +26,9 @@ PIN_DEBUG = 5
 ADC_CH_THOT = 0
 ADC_CH_TCOLD = 1
 
+# Eliminate GPIO warnings
+GPIO.setwarnings(False)
+
 # Make the LED pin an output
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(PIN_LED, GPIO.OUT)
