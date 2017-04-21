@@ -53,11 +53,11 @@ def chg_detected(pin_num, new_state):
     """
     global pulse_count
 
-    if new_state:
-        # always count low-to-high transition
+    if new_state == False:
+        # always count high-to-low transition
         pulse_count += 1
     elif count_both:
-        # only count high-to-low if requested
+        # only count low-to-high if requested
         pulse_count += 1
     pulse_count = pulse_count % ROLLOVER
 

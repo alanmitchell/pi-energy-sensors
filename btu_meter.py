@@ -144,12 +144,12 @@ def chg_detected(pin_num, new_state):
         # enforce minimum delta-T
         if abs(delta_T) < min_delta_T:
             delta_T = 0.0
-        if new_state:
-            # always count low-to-high transition
+        if new_state == False:
+            # always count high-to-low transition
             pulse_count += 1
             heat_count += delta_T
         elif count_both:
-            # only count high-to-low if requested
+            # only count low-to-high if requested
             pulse_count += 1
             heat_count += delta_T
         pulse_count = pulse_count % PULSE_ROLLOVER
