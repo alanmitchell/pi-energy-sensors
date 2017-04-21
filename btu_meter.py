@@ -173,7 +173,7 @@ def chg_detected(pin_num, new_state):
                 calibrate_hot = true_temp - thot
                 calibrate_cold = true_temp - tcold
                 # backup old calibration values and store new values
-                shutil.copy(PATH_CALIBRATE, PATH_CALIBRATE + '.bak'
+                shutil.copy(PATH_CALIBRATE, PATH_CALIBRATE + '.bak')
                 with open(PATH_CALIBRATE, 'w') as fout:
                     fout.write('%s\n' % calibrate_hot)
                     fout.write('%s\n' % calibrate_cold)
