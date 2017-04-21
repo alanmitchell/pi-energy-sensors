@@ -13,6 +13,7 @@ import time
 import sys
 import os
 import argparse
+import shutil
 import RPi.GPIO as GPIO
 import input_change
 import mqtt_poster
@@ -171,7 +172,8 @@ def chg_detected(pin_num, new_state):
                 true_temp = (thot + tcold)/2.0  # deemed the true temp
                 calibrate_hot = true_temp - thot
                 calibrate_cold = true_temp - tcold
-                # store new calibration values
+                # backup old calibration values and store new values
+                shutil.copy(PATH_CALIBRATE, PATH_CALIBRATE + '.bak'
                 with open(PATH_CALIBRATE, 'w') as fout:
                     fout.write('%s\n' % calibrate_hot)
                     fout.write('%s\n' % calibrate_cold)
