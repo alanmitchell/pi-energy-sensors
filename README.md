@@ -1,7 +1,7 @@
 # pi-energy-sensors
 Implements energy-related sensors on the Raspberry Pi, including a BTU meter and a Pulse Counter.
 
-These scripts assume that you have installed the [Mini-Monitor](../mini-monitor) software on the
+These scripts assume that you have installed the [Mini-Monitor](https://github.com/alanmitchell/mini-monitor) software on the
 Pi, as these scripts use the Settings file from that application and other resources including
 the MQTT broker.  A downloadable SD Card image file is available in the Software portion of that
 project's Wiki.
