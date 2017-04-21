@@ -1,6 +1,11 @@
 # pi-energy-sensors
 Implements energy-related sensors on the Raspberry Pi, including a BTU meter and a Pulse Counter.
 
+These scripts assume that you have installed the [Mini-Monitor](../mini-monitor) software on the
+Pi, as these scripts use the Settings file from that application and other resources including
+the MQTT broker.  A downloadable SD Card image file is available in the Software portion of that
+project's Wiki.
+
 Note that frequency limit for the pulse inputs on both the Pulse Counter and the BTU Meter is
 about 10 Hz, assuming a square wave.  For aysmettrical pulses, the shorter portion of 
 the pulse should be at least 50 millseconds long. This criteria accounts for some delays that 
