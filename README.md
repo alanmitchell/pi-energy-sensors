@@ -20,8 +20,10 @@ Here are the schematic and board picture for the Pulse Counter:
 ![Pulse Counter Board Picture](docs/images/board_pulse_counter.jpg)
 
 For the BTU meter, the main script is `btu_meter.py` and the supervisor script to start
-and restart it is `run_btu_meter`.  Here are the schematic and board picture for the BTU meter:
+and restart it is `run_btu_meter`.  Here are the schematic and board pictures for the BTU meter:
 
 ![BTU Meter Schematic](docs/images/schematic_btu_meter.jpg)
 
 ![BTU Meter Board Picture](docs/images/board_btu_meter.jpg)
+
+![BTU Meter in Case Picture](docs/images/board_in_case_btu_meter.jpg)
