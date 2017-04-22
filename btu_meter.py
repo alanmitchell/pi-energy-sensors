@@ -24,12 +24,12 @@ import Adafruit_GPIO.SPI as SPI
 import Adafruit_MCP3008
 
 # GPIO Pins (BCM numbering) and ADC channels used by the BTU METER
-PIN_PULSE_IN = 13
-PIN_CALIBRATE = 4
-PIN_LED = 16
-PIN_DEBUG = 5
-ADC_CH_THOT = 0
-ADC_CH_TCOLD = 1
+PIN_PULSE_IN = 13      # the pulse input pin
+PIN_CALIBRATE = 4      # the calibrate push button is connected here
+PIN_LED = 16           # the calibrate LED is on this pin
+PIN_DEBUG = 5          # a pin used to output a debug signal
+ADC_CH_THOT = 0        # the MCP3008 ADC channel used for the hot thermistor
+ADC_CH_TCOLD = 1       # the MCP3008 ADC channel used for the cold thermistor
 
 # Eliminate GPIO warnings
 GPIO.setwarnings(False)
@@ -132,28 +132,24 @@ def current_temps(include_calibration=True):
     return thot, tcold
 
 def chg_detected(pin_num, new_state):
-    """This is called when the input pin changes state.
+    """This is called when any of watched input pins change state.
     """
     global pulse_count, heat_count
     global calibrate_hot, calibrate_cold
 
     if pin_num == PIN_PULSE_IN:
-        # get current temperatures
-        thot, tcold = current_temps()
-        delta_T = thot - tcold
-        # enforce minimum delta-T
-        if abs(delta_T) < min_delta_T:
-            delta_T = 0.0
-        if new_state == False:
-            # always count high-to-low transition
+        if new_state == False or count_both:
+            # get current temperatures
+            thot, tcold = current_temps()
+            delta_T = thot - tcold
+            # enforce minimum delta-T
+            if abs(delta_T) < min_delta_T:
+                delta_T = 0.0
+
             pulse_count += 1
+            pulse_count = pulse_count % PULSE_ROLLOVER
             heat_count += delta_T
-        elif count_both:
-            # only count low-to-high if requested
-            pulse_count += 1
-            heat_count += delta_T
-        pulse_count = pulse_count % PULSE_ROLLOVER
-        heat_count = heat_count % HEAT_ROLLOVER
+            heat_count = heat_count % HEAT_ROLLOVER
 
     elif pin_num == PIN_CALIBRATE:
         if new_state == False:

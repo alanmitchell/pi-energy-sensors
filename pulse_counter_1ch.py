@@ -12,8 +12,8 @@ import input_change
 import mqtt_poster
 
 # GPIO Pins (BCM numbering) used by the pulse counter
-PIN_IN = 16
-PIN_DEBUG = 5
+PIN_IN = 16     # the pulse input in
+PIN_DEBUG = 5   # an output pin used for debugging
 
 # Count at which counter rolls to zero
 ROLLOVER = 1000000
@@ -49,17 +49,13 @@ poster.start()
 pulse_count = 0
 
 def chg_detected(pin_num, new_state):
-    """This is called when the input pin changes state.
+    """This is called when the pulse input pin changes state.
     """
     global pulse_count
 
-    if new_state == False:
-        # always count high-to-low transition
+    if new_state == False or count_both:
         pulse_count += 1
-    elif count_both:
-        # only count low-to-high if requested
-        pulse_count += 1
-    pulse_count = pulse_count % ROLLOVER
+        pulse_count = pulse_count % ROLLOVER
 
 # Start up the Input Pin Change Detector
 # I have a 10 K pull-up on the board and a 0.01 uF cap to ground.
