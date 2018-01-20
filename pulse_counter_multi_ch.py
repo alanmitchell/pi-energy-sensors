@@ -33,9 +33,6 @@ debug_pin = PIN_DEBUG if args.debug else None
 sys.path.insert(0, '/boot/pi_logger')
 import settings
 
-# make a sensor id
-sensor_id = '%s_%2d_pulse' % (settings.LOGGER_ID, PIN_IN)
-
 # get list of input pins
 pin_in_list =  getattr(settings, 'PULSE_INPUT_PINS', PIN_IN_DEFAULTS)
 
