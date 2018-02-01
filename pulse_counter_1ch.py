@@ -1,5 +1,9 @@
 #!/usr/bin/python
-"""Script to implement a single channel pulse counter that
+"""  *****   DEPRECATED   *****
+--- The pulse_counter_multi_ch can be configured to read one channel as well.
+--- This single-channel script will no longer be maintained.
+
+Script to implement a single channel pulse counter that
 posts to the mini-monitor MQTT broker.
 
 This script should be started by a supervisor capable of restarting
